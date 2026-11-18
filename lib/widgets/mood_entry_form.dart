@@ -17,18 +17,48 @@ class MoodEntryForm extends StatefulWidget {
 }
 
 class _MoodEntryFormState extends State<MoodEntryForm> {
-  // TODO 1.3: Declare the selected score. It starts with nothing selected:
-  //   int? _score;
+  int? _score;
+  final TextEditingController _noteController = TextEditingController();
+  String? _formError;
+  String? _noteError;
 
-  // TODO 2.1: Declare a TextEditingController for the note. Override
-  //   dispose() and call _noteController.dispose() before super.dispose().
-  //   Why does a controller need disposing when an int does not?
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
 
-  // TODO 2.3: Write a _save() method that:
-  //   1. creates a MoodEntry with the selected score, the trimmed note
-  //      (or null if the trimmed note is empty) and DateTime.now()
-  //   2. passes the entry to widget.onSubmit
-  //   3. clears the form: no score selected and an empty note
+  void _save() {
+    if (_score == null) {
+      setState(() {
+        _formError = 'Choose a score from 1 to 10';
+        _noteError = null;
+      });
+      return;
+    }
+
+    if (_noteController.text.length > maxNoteLength) {
+      setState(() {
+        _formError = null;
+        _noteError = 'Note must be $maxNoteLength characters or fewer';
+      });
+      return;
+    }
+
+    final trimmedNote = _noteController.text.trim();
+    final entry = MoodEntry(
+      score: _score!,
+      note: trimmedNote.isEmpty ? null : trimmedNote,
+      createdAt: DateTime.now(),
+    );
+    widget.onSubmit(entry);
+    setState(() {
+      _score = null;
+      _noteController.clear();
+      _formError = null;
+      _noteError = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,16 +73,36 @@ class _MoodEntryFormState extends State<MoodEntryForm> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
-            // TODO 1.3 (continued): Pass _score instead of null. In
-            //   onChanged, store the tapped score inside setState(() { ... }).
-            //   Then try it without setState. What happens, and why?
-            MoodScoreSelector(selectedScore: null, onChanged: (_) {}),
-            // TODO 2.2: Add a TextField for the note that uses your
-            //   controller, labelled 'Note (optional)' (InputDecoration).
-            //
-            // TODO 2.3 (continued): Add a FilledButton labelled 'Save entry'
-            //   that calls _save. While no score is selected, pass
-            //   onPressed: null so that the button is disabled.
+            MoodScoreSelector(
+              selectedScore: _score,
+              onChanged: (score) {
+                setState(() {
+                  _score = _score == score ? null : score;
+                  _formError = null;
+                });
+              },
+            ),
+            TextField(
+              controller: _noteController,
+              onChanged: (note) {
+                if (_noteError != null && note.length <= maxNoteLength) {
+                  setState(() => _noteError = null);
+                }
+              },
+              decoration: InputDecoration(
+                labelText: 'Note (optional)',
+                errorText: _noteError,
+              ),
+            ),
+            if (_formError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  _formError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            FilledButton(onPressed: _save, child: const Text('Save entry')),
           ],
         ),
       ),
