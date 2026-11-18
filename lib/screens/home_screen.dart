@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/mood_entry.dart';
 import '../widgets/mood_card.dart';
 import '../widgets/mood_summary.dart';
+import '../widgets/mood_entry_form.dart';
 
 /// The home screen: a summary card followed by the history of entries.
 ///
@@ -19,10 +20,21 @@ import '../widgets/mood_summary.dart';
 ///   4. Pass _addEntry to the form's onSubmit, and build the summary and
 ///      the cards from _entries.
 ///   Then save an entry: do the history and the average both update?
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.entries});
+///
+class _HomeScreenState extends State<HomeScreen> {
+  late final List<MoodEntry> _entries;
 
-  final List<MoodEntry> entries;
+  @override
+  void initState() {
+    super.initState();
+    _entries = List.of(widget.initialEntries);
+  }
+
+  void _addEntry(MoodEntry entry) {
+    setState(() {
+      _entries.insert(0, entry);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,16 +48,16 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 // TODO 1.2: Show the form as the first item in the list:
-                //   MoodEntryForm(onSubmit: (entry) {}),
-                //   const SizedBox(height: 16),
+                MoodEntryForm(onSubmit: _addEntry),
+                const SizedBox(height: 16),
                 //   (add: import '../widgets/mood_entry_form.dart';)
                 //   HomeScreen is stateless, yet the form inside it will
                 //   remember a selection. Where does that state live?
-                MoodSummary(entries: entries),
+                MoodSummary(entries: _entries),
                 const SizedBox(height: 24),
                 Text('History', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
-                for (final entry in entries) MoodCard(entry: entry),
+                for (final entry in _entries) MoodCard(entry: entry),
               ],
             ),
           ),
@@ -53,4 +65,15 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, required this.initialEntries});
+
+  final List<MoodEntry> initialEntries;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
 }
